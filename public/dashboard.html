@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schedulo — Tamil Voice Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #f4f5fb;
+    --card: #ffffff;
+    --sidebar: #ffffff;
+    --ink: #1a1d2e;
+    --ink2: #5b6178;
+    --ink3: #9296ab;
+    --line: #eceef5;
+    --line2: #e2e5f0;
+    --accent: #5b4bf0;
+    --accent2: #7c6ef5;
+    --accent-soft: #eeebfe;
+    --accent-soft2: #f5f3fe;
+    --teal: #0fb5a3;
+    --teal-soft: #e0f7f4;
+    --amber: #f59e36;
+    --amber-soft: #fef3e2;
+    --pink: #f25287;
+    --pink-soft: #fde8ef;
+    --blue: #3b82f6;
+    --blue-soft: #e6f0fe;
+    --green: #16b364;
+    --green-soft: #e3f8ed;
+    --red: #ef4444;
+    --red-soft: #fdeaea;
+    --r-sm: 10px;
+    --r: 14px;
+    --r-lg: 20px;
+    --shadow: 0 1px 3px rgba(26,29,46,0.04), 0 1px 2px rgba(26,29,46,0.03);
+    --shadow-md: 0 4px 16px rgba(26,29,46,0.06);
+    --shadow-lg: 0 12px 40px rgba(91,75,240,0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .tamil { font-family: 'Noto Sans Tamil', 'Plus Jakarta Sans', sans-serif; }
+
+  .shell { display: flex; min-height: 100vh; }
+
+  /* ─── Sidebar ─── */
+  .sidebar {
+    width: 248px; flex-shrink: 0;
+    background: var(--sidebar);
+    border-right: 1px solid var(--line);
+    position: fixed; top: 0; left: 0; bottom: 0;
+    display: flex; flex-direction: column;
+    z-index: 20;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 11px;
+    padding: 22px 22px 20px;
+  }
+  .brand-mark {
+    width: 38px; height: 38px; border-radius: 11px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 18px; font-weight: 800;
+    box-shadow: 0 4px 12px rgba(91,75,240,0.3);
+  }
+  .brand-name { font-size: 17px; font-weight: 800; letter-spacing: -0.4px; }
+  .brand-tag { font-size: 10px; color: var(--ink3); font-weight: 600; letter-spacing: 0.5px; }
+
+  .nav-group { padding: 8px 14px; }
+  .nav-label {
+    font-size: 10px; font-weight: 700; color: var(--ink3);
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 14px 12px 8px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: var(--r-sm);
+    cursor: pointer; font-size: 14px; font-weight: 600;
+    color: var(--ink2); transition: all 0.16s; margin-bottom: 3px;
+    position: relative;
+  }
+  .nav-item svg { width: 19px; height: 19px; stroke-width: 2; flex-shrink: 0; }
+  .nav-item:hover { background: var(--accent-soft2); color: var(--accent); }
+  .nav-item.active { background: var(--accent); color: #fff; box-shadow: 0 4px 12px rgba(91,75,240,0.25); }
+  .nav-item.active svg { stroke: #fff; }
+  .nav-badge {
+    margin-left: auto; font-size: 10px; font-weight: 700;
+    background: var(--pink); color: #fff;
+    padding: 1px 7px; border-radius: 20px;
+  }
+  .nav-item.active .nav-badge { background: rgba(255,255,255,0.25); }
+  .live-pip {
+    margin-left: auto; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green); box-shadow: 0 0 0 3px var(--green-soft);
+    animation: pip 1.8s infinite;
+  }
+  @keyframes pip { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+  .agent-card {
+    margin: auto 14px 16px; padding: 14px;
+    background: linear-gradient(135deg, var(--accent-soft), var(--accent-soft2));
+    border-radius: var(--r); border: 1px solid var(--line2);
+  }
+  .agent-status { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .agent-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+  .agent-name { font-size: 13px; font-weight: 700; }
+  .agent-meta { font-size: 11px; color: var(--ink2); line-height: 1.6; }
+
+  /* ─── Main ─── */
+  .main { margin-left: 248px; flex: 1; min-width: 0; }
+
+  .topbar {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 32px;
+    background: rgba(244,245,251,0.85);
+    backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 15;
+    border-bottom: 1px solid var(--line);
+  }
+  .page-title { font-size: 22px; font-weight: 800; letter-spacing: -0.6px; }
+  .page-sub { font-size: 13px; color: var(--ink2); margin-top: 1px; }
+  .topbar-search {
+    margin-left: auto; position: relative; width: 280px;
+  }
+  .topbar-search svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; stroke: var(--ink3); }
+  .topbar-search input {
+    width: 100%; padding: 10px 14px 10px 38px;
+    border: 1px solid var(--line2); border-radius: var(--r-sm);
+    background: var(--card); font-size: 13px; color: var(--ink);
+    font-family: inherit; outline: none; transition: all 0.16s;
+  }
+  .topbar-search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: var(--r-sm);
+    border: 1px solid var(--line2); background: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.16s; position: relative;
+  }
+  .icon-btn svg { width: 18px; height: 18px; stroke: var(--ink2); }
+  .icon-btn:hover { background: var(--accent-soft2); border-color: var(--accent); }
+  .icon-btn:hover svg { stroke: var(--accent); }
+  .notif-dot { position: absolute; top: 8px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--pink); border: 2px solid var(--card); }
+  .btn-primary {
+    display: flex; align-items: center; gap: 7px;
+    padding: 10px 18px; border-radius: var(--r-sm);
+    background: var(--accent); color: #fff; border: none;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: all 0.16s;
+    box-shadow: 0 4px 12px rgba(91,75,240,0.25);
+  }
+  .btn-primary svg { width: 16px; height: 16px; stroke: #fff; }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+
+  .content { padding: 26px 32px 48px; }
+  .view { display: none; }
+  .view.active { display: block; animation: fade 0.3s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ─── Stat cards ─── */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 22px; }
+  .stat {
+    background: var(--card); border-radius: var(--r-lg);
+    padding: 20px 22px; box-shadow: var(--shadow);
+    border: 1px solid var(--line); position: relative; overflow: hidden;
+    transition: all 0.2s;
+  }
+  .stat:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  .stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .stat-ico {
+    width: 44px; height: 44px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .stat-ico svg { width: 22px; height: 22px; stroke-width: 2; }
+  .stat-ico.violet { background: var(--accent-soft); } .stat-ico.violet svg { stroke: var(--accent); }
+  .stat-ico.teal { background: var(--teal-soft); } .stat-ico.teal svg { stroke: var(--teal); }
+  .stat-ico.amber { background: var(--amber-soft); } .stat-ico.amber svg { stroke: var(--amber); }
+  .stat-ico.pink { background: var(--pink-soft); } .stat-ico.pink svg { stroke: var(--pink); }
+  .stat-ico.green { background: var(--green-soft); } .stat-ico.green svg { stroke: var(--green); }
+  .stat-ico.blue { background: var(--blue-soft); } .stat-ico.blue svg { stroke: var(--blue); }
+  .stat-trend { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; display: flex; align-items: center; gap: 3px; }
+  .stat-trend.up { background: var(--green-soft); color: var(--green); }
+  .stat-trend.down { background: var(--red-soft); color: var(--red); }
+  .stat-trend svg { width: 12px; height: 12px; }
+  .stat-val { font-size: 30px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+  .stat-lbl { font-size: 13px; color: var(--ink2); font-weight: 600; margin-top: 6px; }
+
+  /* ─── Cards & grids ─── */
+  .grid { display: grid; gap: 18px; margin-bottom: 18px; }
+  .g-2-1 { grid-template-columns: 1fr 360px; }
+  .g-2 { grid-template-columns: 1fr 1fr; }
+  .g-3 { grid-template-columns: repeat(3, 1fr); }
+  .panel {
+    background: var(--card); border-radius: var(--r-lg);
+    box-shadow: var(--shadow); border: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .panel-hd {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px 14px;
+  }
+  .panel-title { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+  .panel-title small { font-size: 12px; color: var(--ink3); font-weight: 500; margin-left: 6px; }
+  .panel-action { font-size: 12px; font-weight: 700; color: var(--accent); cursor: pointer; display: flex; align-items: center; gap: 4px; }
+  .panel-action svg { width: 14px; height: 14px; stroke: var(--accent); }
+  .panel-body { padding: 0 22px 20px; }
+
+  /* segmented control */
+  .seg { display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: var(--r-sm); }
+  .seg button {
+    padding: 6px 14px; border: none; background: transparent;
+    font-size: 12px; font-weight: 700; color: var(--ink2);
+    border-radius: 8px; cursor: pointer; font-family: inherit; transition: all 0.16s;
+  }
+  .seg button.active { background: var(--card); color: var(--accent); box-shadow: var(--shadow); }
+
+  /* ─── Table ─── */
+  .filters { display: flex; align-items: center; gap: 8px; padding: 0 22px 14px; flex-wrap: wrap; }
+  .chip {
+    padding: 7px 15px; border-radius: 20px; font-size: 12px; font-weight: 700;
+    border: 1px solid var(--line2); background: var(--card); color: var(--ink2);
+    cursor: pointer; font-family: inherit; transition: all 0.16s;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 11px 22px; text-align: left;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    text-transform: uppercase; color: var(--ink3);
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    background: #fafbff;
+  }
+  tbody tr { border-bottom: 1px solid var(--line); transition: background 0.12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #fafbff; }
+  tbody td { padding: 14px 22px; font-size: 13px; color: var(--ink2); }
+  .patient-cell { display: flex; align-items: center; gap: 11px; }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff;
+  }
+  .patient-name { font-weight: 700; color: var(--ink); font-size: 13px; }
+  .patient-id { font-size: 11px; color: var(--ink3); font-family: monospace; }
+  .dept-pill {
+    display: inline-block; padding: 5px 12px; border-radius: 8px;
+    font-size: 11px; font-weight: 700;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+  .badge.confirmed { background: var(--green-soft); color: var(--green); }
+  .badge.confirmed::before { background: var(--green); }
+  .badge.cancelled { background: var(--bg); color: var(--ink3); }
+  .badge.cancelled::before { background: var(--ink3); }
+  .row-action {
+    width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--line2);
+    background: var(--card); cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; transition: all 0.16s;
+  }
+  .row-action svg { width: 15px; height: 15px; stroke: var(--ink2); }
+  .row-action:hover { background: var(--red-soft); border-color: var(--red); }
+  .row-action:hover svg { stroke: var(--red); }
+  .row-action.restore:hover { background: var(--green-soft); border-color: var(--green); }
+  .row-action.restore:hover svg { stroke: var(--green); }
+
+  /* ─── Live calls ─── */
+  .live-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 0; border-bottom: 1px solid var(--line);
+  }
+  .live-item:last-child { border-bottom: none; }
+  .live-av {
+    width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+    background: var(--green-soft); display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .live-av svg { width: 18px; height: 18px; stroke: var(--green); }
+  .live-ring { position: absolute; inset: -3px; border-radius: 14px; border: 2px solid var(--green); opacity: 0; animation: ring 1.6s infinite; }
+  @keyframes ring { 0%{opacity:0.6;transform:scale(0.9)} 100%{opacity:0;transform:scale(1.2)} }
+  .live-ph { font-size: 13px; font-weight: 700; }
+  .live-status { font-size: 11px; color: var(--ink2); margin-top: 1px; }
+  .live-time { margin-left: auto; font-size: 11px; color: var(--ink3); font-weight: 600; }
+
+  /* ─── Activity feed ─── */
+  .feed-item { display: flex; gap: 12px; padding: 12px 0; }
+  .feed-dot { width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .feed-dot svg { width: 16px; height: 16px; }
+  .feed-text { font-size: 13px; color: var(--ink); line-height: 1.45; }
+  .feed-text b { font-weight: 700; }
+  .feed-time { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+
+  /* ─── Calendar ─── */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+  .cal-dow { text-align: center; font-size: 11px; font-weight: 700; color: var(--ink3); text-transform: uppercase; padding: 8px 0; letter-spacing: 0.5px; }
+  .cal-cell {
+    aspect-ratio: 1; border: 1px solid var(--line); border-radius: var(--r-sm);
+    padding: 8px; cursor: pointer; transition: all 0.16s; position: relative;
+    display: flex; flex-direction: column;
+  }
+  .cal-cell:hover { border-color: var(--accent); background: var(--accent-soft2); }
+  .cal-cell.other { opacity: 0.35; }
+  .cal-cell.today { border-color: var(--accent); border-width: 2px; }
+  .cal-num { font-size: 13px; font-weight: 700; }
+  .cal-cell.today .cal-num { color: var(--accent); }
+  .cal-dots { display: flex; gap: 3px; flex-wrap: wrap; margin-top: auto; }
+  .cal-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .cal-count { font-size: 10px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+
+  /* ─── Time slots view ─── */
+  .slot-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .slot-row:last-child { border-bottom: none; }
+  .slot-time { font-size: 13px; font-weight: 700; width: 100px; }
+  .slot-bar-track { flex: 1; height: 28px; background: var(--bg); border-radius: 8px; overflow: hidden; position: relative; }
+  .slot-bar { height: 100%; border-radius: 8px; display: flex; align-items: center; padding: 0 10px; color: #fff; font-size: 11px; font-weight: 700; min-width: 36px; }
+
+  /* metric mini cards */
+  .mini-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .mini { background: var(--bg); border-radius: var(--r); padding: 14px 16px; }
+  .mini-lbl { font-size: 11px; color: var(--ink2); font-weight: 600; }
+  .mini-val { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin-top: 4px; }
+
+  /* empty + loading */
+  .empty { padding: 56px 24px; text-align: center; }
+  .empty-ico { width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 16px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; }
+  .empty-ico svg { width: 26px; height: 26px; stroke: var(--accent); }
+  .empty-t { font-size: 15px; font-weight: 700; }
+  .empty-s { font-size: 13px; color: var(--ink2); margin-top: 4px; }
+  .spinner { width: 22px; height: 22px; border: 2.5px solid var(--line2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading { padding: 48px; text-align: center; color: var(--ink3); }
+
+  /* settings */
+  .set-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .set-row:last-child { border-bottom: none; }
+  .set-label { font-size: 14px; font-weight: 700; }
+  .set-desc { font-size: 12px; color: var(--ink2); margin-top: 2px; }
+  .set-val { font-size: 13px; font-weight: 600; color: var(--ink2); background: var(--bg); padding: 8px 14px; border-radius: var(--r-sm); font-family: monospace; }
+  .toggle { width: 44px; height: 26px; border-radius: 20px; background: var(--accent); position: relative; cursor: pointer; }
+  .toggle::after { content: ''; position: absolute; top: 3px; left: 21px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: all 0.2s; }
+
+  /* toast */
+  .toast {
+    position: fixed; bottom: 28px; right: 28px;
+    background: var(--ink); color: #fff; border-radius: var(--r);
+    padding: 14px 20px; font-size: 13px; font-weight: 600;
+    box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px;
+    transform: translateY(120px); opacity: 0; transition: all 0.3s; z-index: 100;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast svg { width: 18px; height: 18px; }
+  .toast.success svg { stroke: #5dde9a; }
+  .toast.error svg { stroke: #ff8a8a; }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  @media (max-width: 1100px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .g-2-1, .g-2, .g-3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div>
+        <div class="brand-name">Schedulo</div>
+        <div class="brand-tag">TAMIL VOICE AI</div>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Menu</div>
+      <div class="nav-item active" data-view="overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Overview
+      </div>
+      <div class="nav-item" data-view="appointments">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Appointments
+        <span class="nav-badge" id="nav-appt-count">0</span>
+      </div>
+      <div class="nav-item" data-view="calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Calendar
+      </div>
+      <div class="nav-item" data-view="analytics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </div>
+      <div class="nav-item" data-view="live">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Live Calls
+        <span class="live-pip" id="nav-live-pip" style="display:none"></span>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">System</div>
+      <div class="nav-item" data-view="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </div>
+    </div>
+
+    <div class="agent-card">
+      <div class="agent-status">
+        <div class="agent-dot"></div>
+        <div class="agent-name">பிரியா AI</div>
+      </div>
+      <div class="agent-meta">Voice agent online<br>Ready to take calls in Tamil</div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title" id="page-title">Overview</div>
+        <div class="page-sub" id="page-sub">Welcome back — here's what's happening today</div>
+      </div>
+      <div class="topbar-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="global-search" placeholder="Search patients, phone, booking ID..." oninput="globalSearch(this.value)">
+      </div>
+      <div class="icon-btn" title="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-dot"></span></div>
+      <div class="icon-btn" onclick="loadAll()" title="Refresh" id="refresh-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div>
+      <button class="btn-primary" onclick="exportCSV()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+    </div>
+
+    <div class="content">
+
+      <!-- ═══ OVERVIEW ═══ -->
+      <div class="view active" id="view-overview">
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-top">
+              <div class="stat-ico violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+              <span class="stat-trend up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>12%</span>
+            </div>
+            <div class="stat-val" id="ov-total">—</div>
+            <div class="stat-lbl">Total appointments</div>
+          </div>
+          <div class="stat">
+            <div class="stat-top">
+              <div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+              <span class="stat-trend up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>8%</span>
+            </div>
+            <div class="stat-val" id="ov-confirmed">—</div>
+            <div class="stat-lbl">Confirmed</div>
+          </div>
+          <div class="stat">
+            <div class="stat-top">
+              <div class="stat-ico amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+              <span class="stat-trend up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>5</span>
+            </div>
+            <div class="stat-val" id="ov-today">—</div>
+            <div class="stat-lbl">Booked today</div>
+          </div>
+          <div class="stat">
+            <div class="stat-top">
+              <div class="stat-ico pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+              <span class="stat-trend up" id="ov-live-trend">Live</span>
+            </div>
+            <div class="stat-val" id="ov-live">0</div>
+            <div class="stat-lbl">Active calls now</div>
+          </div>
+        </div>
+
+        <div class="grid g-2-1">
+          <div class="panel">
+            <div class="panel-hd">
+              <div class="panel-title">Bookings trend <small>last 14 days</small></div>
+              <div class="seg">
+                <button class="active">14D</button>
+                <button onclick="event.stopPropagation()">30D</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div style="position:relative;height:240px">
+                <canvas id="trend-chart" role="img" aria-label="Line chart of bookings over the last 14 days"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-hd"><div class="panel-title">Live calls</div><span class="badge confirmed" id="live-badge-ov">0 active</span></div>
+            <div class="panel-body" id="ov-live-list">
+              <div class="empty" style="padding:32px 16px"><div class="empty-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div class="empty-s">No active calls right now</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid g-2-1">
+          <div class="panel">
+            <div class="panel-hd"><div class="panel-title">Recent appointments</div><span class="panel-action" data-goto="appointments">View all <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span></div>
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Patient</th><th>Date</th><th>Time</th><th>Department</th><th>Status</th></tr></thead>
+                <tbody id="ov-recent-tbody"><tr><td colspan="5" class="loading"><span class="spinner"></span></td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-hd"><div class="panel-title">By department</div></div>
+            <div class="panel-body">
+              <div style="position:relative;height:200px;margin-bottom:8px"><canvas id="dept-donut" role="img" aria-label="Donut chart of bookings by department"></canvas></div>
+              <div id="dept-legend"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ APPOINTMENTS ═══ -->
+      <div class="view" id="view-appointments">
+        <div class="panel">
+          <div class="panel-hd">
+            <div class="panel-title">All appointments <small id="appt-count-lbl">0 records</small></div>
+            <div class="seg">
+              <button class="active" onclick="setApptFilter('all',this)">All</button>
+              <button onclick="setApptFilter('confirmed',this)">Confirmed</button>
+              <button onclick="setApptFilter('cancelled',this)">Cancelled</button>
+              <button onclick="setApptFilter('today',this)">Today</button>
+            </div>
+          </div>
+          <div class="filters" id="dept-chips"></div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Patient</th><th>Phone</th><th>Date</th><th>Time</th><th>Department</th><th>Reason</th><th>Status</th><th></th></tr></thead>
+              <tbody id="appt-tbody"><tr><td colspan="8" class="loading"><span class="spinner"></span> Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ CALENDAR ═══ -->
+      <div class="view" id="view-calendar">
+        <div class="panel">
+          <div class="panel-hd">
+            <div class="panel-title" id="cal-month-label">Calendar</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="icon-btn" onclick="changeMonth(-1)" style="width:34px;height:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg></div>
+              <div class="chip active" onclick="goToday()">Today</div>
+              <div class="icon-btn" onclick="changeMonth(1)" style="width:34px;height:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg></div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="cal-grid" style="margin-bottom:8px">
+              <div class="cal-dow">Sun</div><div class="cal-dow">Mon</div><div class="cal-dow">Tue</div><div class="cal-dow">Wed</div><div class="cal-dow">Thu</div><div class="cal-dow">Fri</div><div class="cal-dow">Sat</div>
+            </div>
+            <div class="cal-grid" id="cal-cells"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ ANALYTICS ═══ -->
+      <div class="view" id="view-analytics">
+        <div class="stats" style="grid-template-columns:repeat(4,1fr)">
+          <div class="stat"><div class="stat-top"><div class="stat-ico violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div></div><div class="stat-val" id="an-avg">—</div><div class="stat-lbl">Avg bookings / day</div></div>
+          <div class="stat"><div class="stat-top"><div class="stat-ico teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="stat-val" id="an-peak">—</div><div class="stat-lbl">Peak time slot</div></div>
+          <div class="stat"><div class="stat-top"><div class="stat-ico green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div></div><div class="stat-val" id="an-rate">—</div><div class="stat-lbl">Confirmation rate</div></div>
+          <div class="stat"><div class="stat-top"><div class="stat-ico blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div></div><div class="stat-val" id="an-busiest">—</div><div class="stat-lbl">Busiest department</div></div>
+        </div>
+        <div class="grid g-2">
+          <div class="panel"><div class="panel-hd"><div class="panel-title">Daily bookings</div></div><div class="panel-body"><div style="position:relative;height:260px"><canvas id="an-daily" role="img" aria-label="Bar chart of daily bookings"></canvas></div></div></div>
+          <div class="panel"><div class="panel-hd"><div class="panel-title">Time slot preference</div></div><div class="panel-body" id="an-slots"><div class="loading"><span class="spinner"></span></div></div></div>
+        </div>
+        <div class="grid g-2">
+          <div class="panel"><div class="panel-hd"><div class="panel-title">Status breakdown</div></div><div class="panel-body"><div style="position:relative;height:220px"><canvas id="an-status" role="img" aria-label="Doughnut of status breakdown"></canvas></div></div></div>
+          <div class="panel"><div class="panel-hd"><div class="panel-title">Department distribution</div></div><div class="panel-body"><div style="position:relative;height:220px"><canvas id="an-dept" role="img" aria-label="Bar chart of departments"></canvas></div></div></div>
+        </div>
+      </div>
+
+      <!-- ═══ LIVE CALLS ═══ -->
+      <div class="view" id="view-live">
+        <div class="grid g-2-1">
+          <div class="panel">
+            <div class="panel-hd"><div class="panel-title">Active conversations</div><span class="badge confirmed" id="live-page-badge">0 active</span></div>
+            <div class="panel-body" id="live-page-list"><div class="loading"><span class="spinner"></span></div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-hd"><div class="panel-title">Call stats today</div></div>
+            <div class="panel-body">
+              <div class="mini-stats">
+                <div class="mini"><div class="mini-lbl">Total calls</div><div class="mini-val" id="live-total-calls">—</div></div>
+                <div class="mini"><div class="mini-lbl">Completed</div><div class="mini-val" id="live-completed">—</div></div>
+                <div class="mini"><div class="mini-lbl">In progress</div><div class="mini-val" id="live-inprogress">0</div></div>
+                <div class="mini"><div class="mini-lbl">Success rate</div><div class="mini-val" id="live-success">—</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SETTINGS ═══ -->
+      <div class="view" id="view-settings">
+        <div class="grid g-2">
+          <div class="panel">
+            <div class="panel-hd"><div class="panel-title">Voice agent</div></div>
+            <div class="panel-body">
+              <div class="set-row"><div><div class="set-label">Agent name</div><div class="set-desc">Name the AI uses on calls</div></div><div class="set-val">பிரியா (Priya)</div></div>
+              <div class="set-row"><div><div class="set-label">Language</div><div class="set-desc">Primary call language</div></div><div class="set-val">Tamil (ta-IN)</div></div>
+              <div class="set-row"><div><div class="set-label">Voice provider</div><div class="set-desc">STT + TTS engine</div></div><div class="set-val">Sarvam AI</div></div>
+              <div class="set-row"><div><div class="set-label">AI model</div><div class="set-desc">Conversation engine</div></div><div class="set-val">Claude Sonnet</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-hd"><div class="panel-title">Integrations</div></div>
+            <div class="panel-body">
+              <div class="set-row"><div><div class="set-label">Telephony</div><div class="set-desc">Inbound call handling</div></div><div style="display:flex;align-items:center;gap:10px"><span class="set-val">Exotel</span><div class="toggle"></div></div></div>
+              <div class="set-row"><div><div class="set-label">Database</div><div class="set-desc">Appointment storage</div></div><div style="display:flex;align-items:center;gap:10px"><span class="set-val">Google Sheets</span><div class="toggle"></div></div></div>
+              <div class="set-row"><div><div class="set-label">SMS confirmations</div><div class="set-desc">Tamil SMS after booking</div></div><div style="display:flex;align-items:center;gap:10px"><span class="set-val">MSG91</span><div class="toggle"></div></div></div>
+              <div class="set-row"><div><div class="set-label">Auto-refresh</div><div class="set-desc">Dashboard data sync</div></div><div style="display:flex;align-items:center;gap:10px"><span class="set-val">30s</span><div class="toggle"></div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd"><div class="panel-title">Departments</div><span class="panel-action">Manage</span></div>
+          <div class="panel-body">
+            <div style="display:flex;gap:10px;flex-wrap:wrap" id="settings-depts"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DEPT_COLORS = {
+  'பொது மருத்துவம்': '#5b4bf0',
+  'இதயவியல்': '#f25287',
+  'எலும்பியல்': '#f59e36',
+  'மகளிர் மருத்துவம்': '#0fb5a3',
+  'குழந்தை மருத்துவம்': '#3b82f6',
+};
+const AVATAR_COLORS = ['#5b4bf0','#0fb5a3','#f59e36','#f25287','#3b82f6','#16b364'];
+function deptColor(d) { return DEPT_COLORS[d] || '#9296ab'; }
+function avatarColor(name) { let h=0; for(let i=0;i<(name||'').length;i++) h=name.charCodeAt(i)+((h<<5)-h); return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length]; }
+function initials(name) { return (name||'?').trim().slice(0,2); }
+
+let appointments = [], stats = {}, analytics = {}, liveCalls = [];
+let apptFilter = 'all', apptDept = 'all', searchQ = '';
+let calDate = new Date();
+let charts = {};
+
+const PAGE_META = {
+  overview: ['Overview', "Welcome back — here's what's happening today"],
+  appointments: ['Appointments', 'Manage all bookings made by the voice agent'],
+  calendar: ['Calendar', 'Monthly view of all appointments'],
+  analytics: ['Analytics', 'Insights into booking patterns and performance'],
+  live: ['Live Calls', 'Conversations happening in real time'],
+  settings: ['Settings', 'Configure your voice agent and integrations'],
+};
+
+// ─── Navigation ───
+document.querySelectorAll('.nav-item[data-view]').forEach(item => {
+  item.addEventListener('click', () => switchView(item.dataset.view));
+});
+document.querySelectorAll('[data-goto]').forEach(el => {
+  el.addEventListener('click', () => switchView(el.dataset.goto));
+});
+function switchView(view) {
+  document.querySelectorAll('.nav-item[data-view]').forEach(n => n.classList.toggle('active', n.dataset.view === view));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  const [t, s] = PAGE_META[view];
+  document.getElementById('page-title').textContent = t;
+  document.getElementById('page-sub').textContent = s;
+  if (view === 'calendar') renderCalendar();
+  if (view === 'analytics') renderAnalytics();
+}
+
+// ─── Load data ───
+async function loadAll() {
+  const ico = document.getElementById('refresh-icon');
+  ico.style.animation = 'spin 0.7s linear infinite';
+  try {
+    const [aRes, anRes] = await Promise.all([
+      fetch('/admin/appointments'),
+      fetch('/admin/analytics'),
+    ]);
+    const aData = await aRes.json();
+    appointments = aData.appointments || [];
+    stats = aData.stats || {};
+    analytics = await anRes.json();
+
+    renderOverview();
+    renderAppointments();
+    renderSettings();
+    loadLive();
+  } catch (e) {
+    showToast('Failed to load data', 'error');
+  }
+  ico.style.animation = '';
+}
+
+async function loadLive() {
+  try {
+    const res = await fetch('/admin/live');
+    const data = await res.json();
+    liveCalls = data.activeCalls || [];
+    renderLive();
+  } catch (e) {}
+}
+
+// ─── Overview ───
+function renderOverview() {
+  document.getElementById('ov-total').textContent = stats.total ?? 0;
+  document.getElementById('ov-confirmed').textContent = stats.confirmed ?? 0;
+  document.getElementById('ov-today').textContent = stats.today ?? 0;
+  document.getElementById('nav-appt-count').textContent = stats.total ?? 0;
+
+  // Recent appointments
+  const recent = [...appointments].reverse().slice(0, 6);
+  const tbody = document.getElementById('ov-recent-tbody');
+  tbody.innerHTML = recent.length ? recent.map(a => `
+    <tr>
+      <td><div class="patient-cell"><div class="avatar" style="background:${avatarColor(a.name)}">${initials(a.name)}</div><div><div class="patient-name">${a.name||'—'}</div><div class="patient-id">${a.id}</div></div></div></td>
+      <td>${a.date||'—'}</td>
+      <td class="tamil">${a.time||'—'}</td>
+      <td><span class="dept-pill tamil" style="background:${deptColor(a.department)}1a;color:${deptColor(a.department)}">${a.department||'—'}</span></td>
+      <td><span class="badge ${a.status==='Confirmed'?'confirmed':'cancelled'}">${a.status==='Confirmed'?'Confirmed':'Cancelled'}</span></td>
+    </tr>`).join('') : `<tr><td colspan="5"><div class="empty"><div class="empty-s">No appointments yet</div></div></td></tr>`;
+
+  renderTrendChart();
+  renderDeptDonut();
+}
+
+function renderTrendChart() {
+  const data = analytics.bookingsPerDay || {};
+  const labels = Object.keys(data).map(d => { const dt = new Date(d); return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short'}); });
+  const values = Object.values(data);
+  if (charts.trend) charts.trend.destroy();
+  const ctx = document.getElementById('trend-chart');
+  const grad = ctx.getContext('2d').createLinearGradient(0,0,0,240);
+  grad.addColorStop(0,'rgba(91,75,240,0.18)'); grad.addColorStop(1,'rgba(91,75,240,0)');
+  charts.trend = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[{ data:values, borderColor:'#5b4bf0', backgroundColor:grad, fill:true, tension:0.4, borderWidth:2.5, pointRadius:0, pointHoverRadius:5, pointHoverBackgroundColor:'#5b4bf0', pointHoverBorderColor:'#fff', pointHoverBorderWidth:2 }]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#1a1d2e', padding:12, cornerRadius:10, displayColors:false, titleColor:'#fff', bodyColor:'#c5c9d6' }},
+      scales:{ x:{ grid:{display:false}, border:{display:false}, ticks:{ color:'#9296ab', font:{size:11}, maxTicksLimit:7 }}, y:{ grid:{color:'#eceef5'}, border:{display:false}, ticks:{ color:'#9296ab', font:{size:11}, stepSize:1, precision:0 }}}}
+  });
+}
+
+function renderDeptDonut() {
+  const byDept = stats.byDepartment || {};
+  const labels = Object.keys(byDept), values = Object.values(byDept);
+  const colors = labels.map(deptColor);
+  if (charts.donut) charts.donut.destroy();
+  if (!labels.length) { document.getElementById('dept-legend').innerHTML='<div class="empty-s" style="text-align:center;padding:20px">No data yet</div>'; return; }
+  charts.donut = new Chart(document.getElementById('dept-donut'), {
+    type:'doughnut',
+    data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderWidth:0, cutout:'68%' }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#1a1d2e', padding:10, cornerRadius:8 }}}
+  });
+  const total = values.reduce((a,b)=>a+b,0);
+  document.getElementById('dept-legend').innerHTML = labels.map((l,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px">
+      <span style="width:9px;height:9px;border-radius:3px;background:${colors[i]}"></span>
+      <span class="tamil" style="flex:1;color:var(--ink2);font-weight:600">${l}</span>
+      <span style="font-weight:700">${values[i]}</span>
+      <span style="color:var(--ink3);font-weight:600">${Math.round(values[i]/total*100)}%</span>
+    </div>`).join('');
+}
+
+// ─── Appointments ───
+function renderDeptChips() {
+  const depts = ['all', ...Object.keys(stats.byDepartment || {})];
+  document.getElementById('dept-chips').innerHTML = depts.map(d =>
+    `<button class="chip ${d===apptDept?'active':''} ${d!=='all'?'tamil':''}" onclick="setApptDept('${d}',this)">${d==='all'?'All departments':d}</button>`
+  ).join('');
+}
+function setApptDept(d, el) { apptDept = d; document.querySelectorAll('#dept-chips .chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); renderAppointments(); }
+function setApptFilter(f, el) { apptFilter = f; el.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active')); el.classList.add('active'); renderAppointments(); }
+
+function renderAppointments() {
+  renderDeptChips();
+  let rows = [...appointments];
+  const today = new Date().toISOString().slice(0,10);
+  if (apptFilter==='confirmed') rows = rows.filter(r=>r.status==='Confirmed');
+  else if (apptFilter==='cancelled') rows = rows.filter(r=>r.status==='Cancelled');
+  else if (apptFilter==='today') rows = rows.filter(r=>r.bookedAt?.startsWith(today));
+  if (apptDept!=='all') rows = rows.filter(r=>r.department===apptDept);
+  if (searchQ) { const q=searchQ.toLowerCase(); rows = rows.filter(r=>(r.name||'').toLowerCase().includes(q)||(r.phone||'').includes(q)||(r.id||'').toLowerCase().includes(q)); }
+
+  document.getElementById('appt-count-lbl').textContent = rows.length + ' record' + (rows.length!==1?'s':'');
+  const tbody = document.getElementById('appt-tbody');
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="empty-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="empty-t">No appointments found</div><div class="empty-s">Try adjusting your filters</div></div></td></tr>`; return; }
+
+  tbody.innerHTML = [...rows].reverse().map(a => `
+    <tr id="r-${a.id}">
+      <td><div class="patient-cell"><div class="avatar" style="background:${avatarColor(a.name)}">${initials(a.name)}</div><div><div class="patient-name">${a.name||'—'}</div><div class="patient-id">${a.id}</div></div></div></td>
+      <td style="font-family:monospace;font-size:12px">${a.phone||'—'}</td>
+      <td>${a.date||'—'}</td>
+      <td class="tamil">${a.time||'—'}</td>
+      <td><span class="dept-pill tamil" style="background:${deptColor(a.department)}1a;color:${deptColor(a.department)}">${a.department||'—'}</span></td>
+      <td class="tamil" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.reason||''}">${a.reason||'—'}</td>
+      <td><span class="badge ${a.status==='Confirmed'?'confirmed':'cancelled'}">${a.status==='Confirmed'?'Confirmed':'Cancelled'}</span></td>
+      <td>${a.status==='Confirmed'
+        ? `<button class="row-action" onclick="cancelAppt('${a.id}',this)" title="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`
+        : `<button class="row-action restore" onclick="restoreAppt('${a.id}',this)" title="Restore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>`
+      }</td>
+    </tr>`).join('');
+}
+
+async function cancelAppt(id, btn) {
+  btn.innerHTML='<span class="spinner" style="width:14px;height:14px"></span>';
+  try { const r = await fetch(`/admin/appointments/${id}/cancel`,{method:'PATCH'}); if(!r.ok)throw 0;
+    const a = appointments.find(x=>x.id===id); if(a)a.status='Cancelled'; stats.confirmed--; stats.cancelled++;
+    renderAppointments(); renderOverview(); showToast('Appointment cancelled','success');
+  } catch(e){ showToast('Failed to cancel','error'); renderAppointments(); }
+}
+async function restoreAppt(id, btn) {
+  btn.innerHTML='<span class="spinner" style="width:14px;height:14px"></span>';
+  try { const r = await fetch(`/admin/appointments/${id}/restore`,{method:'PATCH'}); if(!r.ok)throw 0;
+    const a = appointments.find(x=>x.id===id); if(a)a.status='Confirmed'; stats.confirmed++; stats.cancelled--;
+    renderAppointments(); renderOverview(); showToast('Appointment restored','success');
+  } catch(e){ showToast('Failed to restore','error'); renderAppointments(); }
+}
+
+// ─── Calendar ───
+function changeMonth(d){ calDate.setMonth(calDate.getMonth()+d); renderCalendar(); }
+function goToday(){ calDate = new Date(); renderCalendar(); }
+function renderCalendar() {
+  const y = calDate.getFullYear(), m = calDate.getMonth();
+  document.getElementById('cal-month-label').textContent = calDate.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+  const first = new Date(y,m,1).getDay();
+  const days = new Date(y,m+1,0).getDate();
+  const prevDays = new Date(y,m,0).getDate();
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  // count appts by bookedAt date
+  const counts = {};
+  appointments.forEach(a => { const d = (a.bookedAt||'').slice(0,10); if(d) (counts[d]=counts[d]||[]).push(a); });
+
+  let html = '';
+  for (let i=first-1;i>=0;i--) html += `<div class="cal-cell other"><div class="cal-num">${prevDays-i}</div></div>`;
+  for (let d=1;d<=days;d++) {
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const appts = counts[ds]||[];
+    const isToday = ds===todayStr;
+    const dots = [...new Set(appts.map(a=>a.department))].slice(0,4).map(dep=>`<span class="cal-dot" style="background:${deptColor(dep)}"></span>`).join('');
+    html += `<div class="cal-cell ${isToday?'today':''}"><div class="cal-num">${d}</div>${appts.length?`<div class="cal-dots">${dots}</div><div class="cal-count">${appts.length} booking${appts.length>1?'s':''}</div>`:''}</div>`;
+  }
+  const total = first + days; for (let i=1;i<=(7-total%7)%7;i++) html += `<div class="cal-cell other"><div class="cal-num">${i}</div></div>`;
+  document.getElementById('cal-cells').innerHTML = html;
+}
+
+// ─── Analytics ───
+function renderAnalytics() {
+  const byDay = analytics.bookingsPerDay || {};
+  const dayVals = Object.values(byDay);
+  const avg = dayVals.length ? (dayVals.reduce((a,b)=>a+b,0)/dayVals.length) : 0;
+  document.getElementById('an-avg').textContent = avg.toFixed(1);
+
+  const slots = analytics.timeSlots || {};
+  const peakSlot = Object.entries(slots).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('an-peak').innerHTML = peakSlot ? `<span class="tamil" style="font-size:20px">${peakSlot[0]}</span>` : '—';
+
+  const rate = stats.total ? Math.round((stats.confirmed/stats.total)*100) : 0;
+  document.getElementById('an-rate').textContent = rate + '%';
+
+  const byDept = stats.byDepartment || {};
+  const busiest = Object.entries(byDept).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('an-busiest').innerHTML = busiest ? `<span class="tamil" style="font-size:18px">${busiest[0]}</span>` : '—';
+
+  // Daily bar
+  if (charts.anDaily) charts.anDaily.destroy();
+  const dlabels = Object.keys(byDay).map(d=>new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short'}));
+  charts.anDaily = new Chart(document.getElementById('an-daily'),{
+    type:'bar', data:{ labels:dlabels, datasets:[{ data:dayVals, backgroundColor:'#5b4bf0', borderRadius:6, maxBarThickness:24 }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{backgroundColor:'#1a1d2e',padding:10,cornerRadius:8,displayColors:false}}, scales:{ x:{grid:{display:false},border:{display:false},ticks:{color:'#9296ab',font:{size:10},maxTicksLimit:7}}, y:{grid:{color:'#eceef5'},border:{display:false},ticks:{color:'#9296ab',font:{size:11},stepSize:1,precision:0}}}}
+  });
+
+  // Time slots horizontal
+  const slotEntries = Object.entries(slots);
+  const maxSlot = Math.max(...slotEntries.map(s=>s[1]),1);
+  document.getElementById('an-slots').innerHTML = slotEntries.length ? slotEntries.map(([s,v],i)=>`
+    <div class="slot-row"><div class="slot-time tamil">${s}</div><div class="slot-bar-track"><div class="slot-bar" style="width:${Math.max(v/maxSlot*100,8)}%;background:${AVATAR_COLORS[i%AVATAR_COLORS.length]}">${v}</div></div></div>
+  `).join('') : '<div class="empty-s" style="text-align:center;padding:30px">No data yet</div>';
+
+  // Status doughnut
+  if (charts.anStatus) charts.anStatus.destroy();
+  charts.anStatus = new Chart(document.getElementById('an-status'),{
+    type:'doughnut', data:{ labels:['Confirmed','Cancelled'], datasets:[{ data:[stats.confirmed||0, stats.cancelled||0], backgroundColor:['#16b364','#e2e5f0'], borderWidth:0, cutout:'70%' }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'bottom',labels:{font:{size:12,family:'Plus Jakarta Sans'},color:'#5b6178',padding:14,usePointStyle:true,pointStyle:'circle'}}, tooltip:{backgroundColor:'#1a1d2e',padding:10,cornerRadius:8}}}
+  });
+
+  // Dept bar
+  if (charts.anDept) charts.anDept.destroy();
+  const dl = Object.keys(byDept), dv = Object.values(byDept);
+  charts.anDept = new Chart(document.getElementById('an-dept'),{
+    type:'bar', data:{ labels:dl.map(d=>d.length>8?d.slice(0,7)+'…':d), datasets:[{ data:dv, backgroundColor:dl.map(deptColor), borderRadius:6, maxBarThickness:28 }]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1d2e',padding:10,cornerRadius:8,displayColors:false}}, scales:{ x:{grid:{color:'#eceef5'},border:{display:false},ticks:{color:'#9296ab',font:{size:11},stepSize:1,precision:0}}, y:{grid:{display:false},border:{display:false},ticks:{color:'#5b6178',font:{size:11}}}}}
+  });
+}
+
+// ─── Live ───
+function renderLive() {
+  const n = liveCalls.length;
+  document.getElementById('ov-live').textContent = n;
+  document.getElementById('live-badge-ov').textContent = n + ' active';
+  document.getElementById('live-page-badge').textContent = n + ' active';
+  document.getElementById('nav-live-pip').style.display = n>0?'block':'none';
+
+  const items = liveCalls.length ? liveCalls.map(c=>`
+    <div class="live-item">
+      <div class="live-av"><div class="live-ring"></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+      <div><div class="live-ph">${c.callerPhone||'Unknown'}</div><div class="live-status">${c.turns} turns · ${c.isComplete?'Completed':'In progress'}</div></div>
+      <div class="live-time">${timeSince(c.createdAt)}</div>
+    </div>`).join('') : `<div class="empty" style="padding:32px 16px"><div class="empty-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><div class="empty-s">No active calls right now</div></div>`;
+  document.getElementById('ov-live-list').innerHTML = items;
+  document.getElementById('live-page-list').innerHTML = items;
+  document.getElementById('live-inprogress').textContent = liveCalls.filter(c=>!c.isComplete).length;
+  document.getElementById('live-total-calls').textContent = stats.total ?? 0;
+  document.getElementById('live-completed').textContent = stats.confirmed ?? 0;
+  document.getElementById('live-success').textContent = (stats.total ? Math.round(stats.confirmed/stats.total*100):0) + '%';
+}
+
+// ─── Settings ───
+function renderSettings() {
+  const depts = Object.keys(stats.byDepartment || {});
+  document.getElementById('settings-depts').innerHTML = (depts.length?depts:['பொது மருத்துவம்','இதயவியல்','எலும்பியல்','மகளிர் மருத்துவம்','குழந்தை மருத்துவம்']).map(d=>
+    `<span class="dept-pill tamil" style="background:${deptColor(d)}1a;color:${deptColor(d)};padding:8px 16px;font-size:13px">${d}</span>`
+  ).join('');
+}
+
+// ─── Utils ───
+function globalSearch(q){ searchQ=q; renderAppointments(); if(q && !document.getElementById('view-appointments').classList.contains('active')) switchView('appointments'); }
+function exportCSV(){ window.open('/admin/export','_blank'); showToast('Exporting appointments...','success'); }
+function timeSince(date){ const s=Math.floor((Date.now()-new Date(date))/1000); if(s<60)return s+'s ago'; if(s<3600)return Math.floor(s/60)+'m ago'; return Math.floor(s/3600)+'h ago'; }
+function showToast(msg,type='success'){ const t=document.getElementById('toast'); t.className='toast show '+type; t.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">${type==='success'?'<polyline points="20 6 9 17 4 12"/>':'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'}</svg>${msg}`; setTimeout(()=>t.className='toast',3000); }
+
+loadAll();
+setInterval(loadAll, 30000);
+setInterval(loadLive, 8000);
+</script>
+</body>
+</html>
